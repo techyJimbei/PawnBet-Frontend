@@ -7,35 +7,29 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pawnbet_frontend.R
+import androidx.navigation.NavController
+import com.example.pawnbet_frontend.ui.navigation.Screen
 import com.example.pawnbet_frontend.ui.theme.Orange
+import kotlinx.coroutines.delay
+
 
 @Composable
-@Preview(showSystemUi = true)
-fun SplashScreenPreview() {
-    SplashScreen()
-}
+fun SplashScreen(navController: NavController) {
 
-@Composable
-fun SplashScreen() {
+    LaunchedEffect(Unit) {
+        delay(3000)
+        navController.navigate(Screen.Onboarding.route) {
+            popUpTo(Screen.Splash.route) { inclusive = true }
+        }
+    }
 
-
-    val jomhuriaFont = FontFamily(
-        Font(R.font.jomhuria)
-    )
-
-    val roboto_light = FontFamily(
-        Font(R.font.roboto_light)
-    )
 
     Box(
         modifier = Modifier
@@ -50,14 +44,12 @@ fun SplashScreen() {
         ) {
             Text(
                 text = "PAWNBET",
-                fontFamily = jomhuriaFont,
-                fontSize = 58.sp,
+                fontSize = 74.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White
             )
             Text(
                 text = "powered by shruti",
-                fontFamily = roboto_light,
                 fontSize = 16.sp,
                 color = Color.White
             )
