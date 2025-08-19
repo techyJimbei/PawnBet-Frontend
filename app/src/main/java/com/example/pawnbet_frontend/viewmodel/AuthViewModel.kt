@@ -46,7 +46,7 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 val response = api.login(LoginRequest(username, password))
-                if (response.isSuccessful && response.body() != null) {
+                if (response.isSuccessful && response.body() != null && !response.body()!!.token.isNullOrEmpty()) {
                     Log.e("Auth", "Login Successful")
                     tokenManager.saveToken(response.body()!!.token)
                 } else {
