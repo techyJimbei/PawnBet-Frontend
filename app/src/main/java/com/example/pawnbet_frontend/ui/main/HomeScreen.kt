@@ -56,7 +56,6 @@ import coil.compose.AsyncImage
 import com.example.pawnbet_frontend.R
 import com.example.pawnbet_frontend.model.AuctionStatus
 import com.example.pawnbet_frontend.model.ProductResponse
-import com.example.pawnbet_frontend.ui.theme.Creme
 import com.example.pawnbet_frontend.ui.theme.Grey
 import com.example.pawnbet_frontend.ui.theme.LightGrey
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
@@ -98,7 +97,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Creme)
+            .background(Color(0xFFFAF8F4))
     ) {
         val scrollState = rememberScrollState()
 
@@ -257,7 +256,6 @@ fun ProductCard(product: ProductResponse) {
                         .padding(bottom = 8.dp)
                 )
 
-
                 Text(
                     text = product.tag ?: "No tag",
                     color = Orange,
@@ -282,6 +280,26 @@ fun ProductCard(product: ProductResponse) {
                 )
             }
         }
+
+        IconButton(
+            onClick = { /* handle click */ },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(y = 15.dp, x = 5.dp)
+                .size(20.dp)
+                .background(
+                    color = Color.White,
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.unselected_heart),
+                contentDescription = "Wishlist Icon",
+                tint = Orange,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
 
         if (isLive) {
             Box(

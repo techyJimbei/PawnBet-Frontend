@@ -1,6 +1,5 @@
 package com.example.pawnbet_frontend.ui.theme
 
-import android.health.connect.CreateMedicalDataSourceRequest
 import androidx.compose.ui.graphics.Color
 
 val Purple80 = Color(0xFFD0BCFF)
@@ -15,5 +14,6 @@ val Orange = Color(0xFFE08604)
 val NavyBlue = Color(0xFF0C1739)
 val Grey = Color(0xFF8F909F)
 val LightGrey = Color(0xFFD1CEDE)
-val Creme = Color(0xFFFAF8F4)
+val Beige = Color(0xFFFAF8F4)
 val Red = Color(0xFFB30000)
+val DarkGrey = Color(0xFF4D4D50)
