@@ -1,7 +1,6 @@
 package com.example.pawnbet_frontend.model
 
 import java.math.BigDecimal
-import java.time.LocalDateTime
 
 data class ProductResponse (
     val id: Long,
@@ -12,6 +11,6 @@ data class ProductResponse (
     val productStatus: ProductStatus?,
     val auctionStatus: AuctionStatus?,
     val seller: UserProfileResponse,
-    val imageUrls: List<String>,
+    val imageUrl: String,
     val createdAt: String
 )

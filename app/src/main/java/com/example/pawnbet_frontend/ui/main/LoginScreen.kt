@@ -100,6 +100,8 @@ fun LoginScreen(
 
         Button(
             onClick = {
+                println("LoginScreen NavController hash: ${navController.hashCode()}")
+
                 if (username.isNotBlank() && password.isNotBlank()) {
                     viewmodel.login(username, password)
                     navController.navigate(Screen.MainScreen.route) {

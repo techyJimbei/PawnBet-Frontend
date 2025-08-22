@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.pawnbet_frontend.api.ApiEndPoints
 import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.model.ProductResponse
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class ProductViewModel(
@@ -20,6 +22,14 @@ class ProductViewModel(
 
     private val _searchProducts = mutableStateOf<List<ProductResponse>>(emptyList())
     val searchProducts: State<List<ProductResponse>> = _searchProducts
+
+    private val _selectedPost = MutableStateFlow<ProductResponse?>(null)
+    val selectedPost: StateFlow<ProductResponse?> = _selectedPost
+
+    fun selectProduct(productResponse: ProductResponse){
+        _selectedPost.value = productResponse
+    }
+
 
     fun getAllProduct(){
         viewModelScope.launch {

@@ -1,5 +1,6 @@
 package com.example.pawnbet_frontend.api
 
+import com.example.pawnbet_frontend.model.AuctionResponse
 import com.example.pawnbet_frontend.model.LoginRequest
 import com.example.pawnbet_frontend.model.LoginResponse
 import com.example.pawnbet_frontend.model.ProductResponse
@@ -30,4 +31,8 @@ interface ApiEndPoints {
 
     @GET("/api/product/search")
     suspend fun getSearchProducts(@Header("Authorization") token:String, @Query("keyword") keyword: String): Response<List<ProductResponse>>
+
+    // Auction endpoints
+    @GET("/api/product/{id}/auction")
+    suspend fun getAuctionDetails(@Header("Authorization") token: String, @Body request: ProductResponse?): Response<AuctionResponse>
 }

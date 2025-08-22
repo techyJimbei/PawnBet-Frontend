@@ -10,12 +10,19 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pawnbet_frontend.api.ApiService
 import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.jwt.dataStore
+import com.example.pawnbet_frontend.ui.main.AuctionScreen
 import com.example.pawnbet_frontend.ui.main.HomeScreen
 import com.example.pawnbet_frontend.ui.main.LoginScreen
 import com.example.pawnbet_frontend.ui.main.MainScreen
+import com.example.pawnbet_frontend.ui.main.MyProductScreen
 import com.example.pawnbet_frontend.ui.main.OnboardingScreen
+import com.example.pawnbet_frontend.ui.main.OrdersScreen
+import com.example.pawnbet_frontend.ui.main.ProductPreviewScreen
 import com.example.pawnbet_frontend.ui.main.SignUpScreen
+import com.example.pawnbet_frontend.ui.main.WishlistScreen
 import com.example.pawnbet_frontend.ui.splash.SplashScreen
+import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.AuctionViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import com.example.pawnbet_frontend.viewmodel.AuthViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
@@ -28,10 +35,12 @@ sealed class Screen(val route: String) {
     object Login : Screen("login_screen")
     object MainScreen : Screen("main_screen")
     object HomeScreen : Screen("home_screen")
+    object ProductPreviewScreen : Screen("product_preview_screen")
     object AuctionScreen : Screen("auction_screen")
     object WishlistScreen : Screen("wishlist_screen")
     object MyProductScreen : Screen("my_product_screen")
     object OrdersScreen : Screen("orders_screen")
+
 }
 
 @Composable
@@ -48,6 +57,10 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
 
     val productViewModel: ProductViewModel = viewModel (
         factory = ProductViewModelFactory(apiService, tokenManager)
+    )
+
+    val auctionViewModel: AuctionViewModel = viewModel (
+        factory = AuctionViewModelFactory(apiService, tokenManager)
     )
 
     NavHost(
@@ -76,7 +89,26 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Screen.HomeScreen.route){
-            HomeScreen(productViewModel)
+            println("AppNavGraph NavController hash: ${navController.hashCode()}")
+            HomeScreen(productViewModel, navController)
         }
+
+        composable(Screen.ProductPreviewScreen.route){
+            ProductPreviewScreen(productViewModel, auctionViewModel)
+        }
+
+        composable(Screen.AuctionScreen.route) {
+            AuctionScreen()
+        }
+        composable(Screen.WishlistScreen.route) {
+            WishlistScreen()
+        }
+        composable(Screen.MyProductScreen.route) {
+            MyProductScreen()
+        }
+        composable(Screen.OrdersScreen.route) {
+            OrdersScreen()
+        }
+
     }
 }

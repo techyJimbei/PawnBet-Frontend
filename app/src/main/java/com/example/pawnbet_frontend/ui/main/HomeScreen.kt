@@ -3,6 +3,7 @@ package com.example.pawnbet_frontend.ui.main
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,10 +53,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pawnbet_frontend.R
 import com.example.pawnbet_frontend.model.AuctionStatus
 import com.example.pawnbet_frontend.model.ProductResponse
+import com.example.pawnbet_frontend.ui.navigation.Screen
 import com.example.pawnbet_frontend.ui.theme.Grey
 import com.example.pawnbet_frontend.ui.theme.LightGrey
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
@@ -66,7 +69,9 @@ import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 @Composable
 fun HomeScreen(
     productViewModel: ProductViewModel,
+    navController: NavController
 ) {
+    println("HomeScreen NavController hash: ${navController.hashCode()}")
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -155,7 +160,7 @@ fun HomeScreen(
 
             LazyRow {
                 items(filteredProducts){product ->
-                    ProductCard(product)
+                    ProductCard(product = product, navController = navController)
                 }
             }
 
@@ -203,7 +208,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(displayedProducts) { product ->
-                    ProductCard(product = product)
+                    ProductCard(product = product, navController = navController)
                 }
             }
         }
@@ -211,7 +216,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun ProductCard(product: ProductResponse) {
+fun ProductCard(product: ProductResponse, navController: NavController) {
 
     val isLive = product.auctionStatus == AuctionStatus.LIVE
 
@@ -220,6 +225,13 @@ fun ProductCard(product: ProductResponse) {
             .width(220.dp)
             .height(300.dp)
             .padding(8.dp)
+            .clickable(
+
+                onClick = {
+                    println("ProductCard NavController hash: ${navController.hashCode()}")
+                    navController.navigate(Screen.ProductPreviewScreen.route)
+                }
+            )
     ) {
         Card(
             modifier = Modifier.fillMaxSize(),
@@ -248,7 +260,7 @@ fun ProductCard(product: ProductResponse) {
                 )
 
                 AsyncImage(
-                    model = product.imageUrls.firstOrNull() ?: "",
+                    model = product.imageUrl,
                     contentDescription = product.title,
                     modifier = Modifier
                         .size(160.dp)
