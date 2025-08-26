@@ -23,11 +23,11 @@ class ProductViewModel(
     private val _searchProducts = mutableStateOf<List<ProductResponse>>(emptyList())
     val searchProducts: State<List<ProductResponse>> = _searchProducts
 
-    private val _selectedPost = MutableStateFlow<ProductResponse?>(null)
-    val selectedPost: StateFlow<ProductResponse?> = _selectedPost
+    private val _selectedProduct = MutableStateFlow<ProductResponse?>(null)
+    val selectedProduct: StateFlow<ProductResponse?> = _selectedProduct
 
     fun selectProduct(productResponse: ProductResponse){
-        _selectedPost.value = productResponse
+        _selectedProduct.value = productResponse
     }
 
 

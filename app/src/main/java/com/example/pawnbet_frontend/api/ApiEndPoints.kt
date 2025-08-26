@@ -1,6 +1,9 @@
 package com.example.pawnbet_frontend.api
 
 import com.example.pawnbet_frontend.model.AuctionResponse
+import com.example.pawnbet_frontend.model.BidRequest
+import com.example.pawnbet_frontend.model.CommentRequest
+import com.example.pawnbet_frontend.model.CommentResponse
 import com.example.pawnbet_frontend.model.LoginRequest
 import com.example.pawnbet_frontend.model.LoginResponse
 import com.example.pawnbet_frontend.model.ProductResponse
@@ -11,6 +14,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiEndPoints {
@@ -21,6 +25,9 @@ interface ApiEndPoints {
 
     @POST("/api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("/api/auth/verify")
+    suspend fun verifyToken(@Header("Authorization") token : String): Boolean
 
     @GET("/api/auth/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserProfileResponse>
@@ -34,5 +41,16 @@ interface ApiEndPoints {
 
     // Auction endpoints
     @GET("/api/product/{id}/auction")
-    suspend fun getAuctionDetails(@Header("Authorization") token: String, @Body request: ProductResponse?): Response<AuctionResponse>
+    suspend fun getAuctionDetails(@Header("Authorization") token: String, @Path("id") productId: Long): Response<AuctionResponse>
+
+    //Comment endpoints
+    @POST("/api/comment")
+    suspend fun addComment(@Header("Authorization") token : String, @Body request: CommentRequest): Response<CommentResponse>
+
+    @GET("/api/comment/{product_id}")
+    suspend fun getAllComments(@Header("Authorization") token : String, @Path("product_id") productId: Long): Response<List<CommentResponse>>
+
+    //Bid endpoints
+    @POST("/api/bid/{product_id}")
+    suspend fun raiseBid(@Header("Authorization") token : String, @Body request : BidRequest): Response<BidRequest>
 }

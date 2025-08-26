@@ -17,16 +17,28 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pawnbet_frontend.ui.navigation.Screen
 import com.example.pawnbet_frontend.ui.theme.Orange
+import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
 
 @Composable
-fun SplashScreen(navController: NavController) {
+fun SplashScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel
+) {
+
 
     LaunchedEffect(Unit) {
-        delay(3000)
-        navController.navigate(Screen.Onboarding.route) {
-            popUpTo(Screen.Splash.route) { inclusive = true }
+        delay(2000)
+        val isValid = authViewModel.verifyToken()
+        if (isValid) {
+            navController.navigate(Screen.MainScreen.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
+        } else {
+            navController.navigate(Screen.Onboarding.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
         }
     }
 

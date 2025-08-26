@@ -1,5 +1,7 @@
 package com.example.pawnbet_frontend.ui.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +27,8 @@ import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import com.example.pawnbet_frontend.viewmodel.AuthViewModelFactory
+import com.example.pawnbet_frontend.viewmodel.CommentViewModel
+import com.example.pawnbet_frontend.viewmodel.CommentViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModelFactory
 
@@ -43,6 +47,7 @@ sealed class Screen(val route: String) {
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(navController: NavHostController = rememberNavController()) {
 
@@ -63,13 +68,17 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         factory = AuctionViewModelFactory(apiService, tokenManager)
     )
 
+    val commentViewModel: CommentViewModel = viewModel (
+        factory = CommentViewModelFactory(apiService, tokenManager)
+    )
+
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
 
         composable(Screen.Splash.route) {
-            SplashScreen(navController)
+            SplashScreen(navController, authViewModel)
         }
 
         composable(Screen.Onboarding.route) {
@@ -85,29 +94,11 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Screen.MainScreen.route){
-            MainScreen(productViewModel)
-        }
-
-        composable(Screen.HomeScreen.route){
-            println("AppNavGraph NavController hash: ${navController.hashCode()}")
-            HomeScreen(productViewModel, navController)
+            MainScreen(rootNavController = navController, productViewModel = productViewModel)
         }
 
         composable(Screen.ProductPreviewScreen.route){
-            ProductPreviewScreen(productViewModel, auctionViewModel)
-        }
-
-        composable(Screen.AuctionScreen.route) {
-            AuctionScreen()
-        }
-        composable(Screen.WishlistScreen.route) {
-            WishlistScreen()
-        }
-        composable(Screen.MyProductScreen.route) {
-            MyProductScreen()
-        }
-        composable(Screen.OrdersScreen.route) {
-            OrdersScreen()
+            ProductPreviewScreen(productViewModel, auctionViewModel, commentViewModel, navController)
         }
 
     }

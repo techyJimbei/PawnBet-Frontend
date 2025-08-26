@@ -58,6 +58,20 @@ class AuthViewModel(
         }
     }
 
+    suspend fun verifyToken(): Boolean {
+        val token = tokenManager.getToken()
+        return if (token.isNullOrEmpty()) {
+            false
+        } else {
+            try {
+                api.verifyToken("Bearer $token")
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+
     fun getUserProfile() {
         viewModelScope.launch {
             try {
@@ -72,7 +86,7 @@ class AuthViewModel(
                     val body = response.body()
                     if (body != null) {
                         username = body.username
-                        profilePicture = body.imageBase64
+                        profilePicture = body.profileImageUrl
                         Log.d("Auth", "Profile fetched successfully")
                     }
                 } else {

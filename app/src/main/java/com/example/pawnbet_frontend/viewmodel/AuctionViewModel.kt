@@ -19,11 +19,11 @@ class AuctionViewModel(
     private val _auctionDetails = mutableStateOf<AuctionResponse?>(null)
     val auctionDetails: State<AuctionResponse?> = _auctionDetails
 
-    fun getAuctionDetails(productResponse: ProductResponse?){
+    fun getAuctionDetails(productId: Long){
         viewModelScope.launch {
             try{
                 val token = "Bearer ${tokenManager.getToken() ?: ""}"
-                val response = api.getAuctionDetails(token, productResponse)
+                val response = api.getAuctionDetails(token, productId)
                 if(response.isSuccessful && response.body() != null){
                     _auctionDetails.value = response.body()!!
                     Log.e("Auction", "Auction data received")

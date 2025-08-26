@@ -1,6 +1,8 @@
 package com.example.pawnbet_frontend.ui.main
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,74 +20,113 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pawnbet_frontend.R
 import com.example.pawnbet_frontend.model.AuctionResponse
 import com.example.pawnbet_frontend.model.AuctionStatus
+import com.example.pawnbet_frontend.model.CommentRequest
+import com.example.pawnbet_frontend.ui.navigation.Screen
+import com.example.pawnbet_frontend.ui.theme.Grey
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
+import com.example.pawnbet_frontend.ui.theme.Red
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.CommentViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
+import org.w3c.dom.Comment
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ProductPreviewScreen(
     productViewModel: ProductViewModel,
-    auctionViewModel: AuctionViewModel
+    auctionViewModel: AuctionViewModel,
+    commentViewModel: CommentViewModel,
+    navController: NavController
 ) {
-    val product by productViewModel.selectedPost.collectAsState()
+    val product by productViewModel.selectedProduct.collectAsState()
+    val comments by commentViewModel.comments
     val auction by auctionViewModel.auctionDetails
     val AuctionDetails by remember { mutableStateOf(product?.auctionStatus) }
 
+    var commentDialog by remember { mutableStateOf(false) }
+    val selectedComment by commentViewModel.selectedComment.collectAsState()
+    var addComment by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        auctionViewModel.getAuctionDetails(product)
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(product?.id) {
+        product?.let {
+            auctionViewModel.getAuctionDetails(it.id)
+            commentViewModel.getAllComments(it.id)
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(top = 8.dp)
             .background(color = Color(0xFFFAF8F4))
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
             item {
                 Column(
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = {
+                            navController.navigate(Screen.MainScreen.route) {
+                                popUpTo(Screen.ProductPreviewScreen.route) { inclusive = true }
+                            }
+                        }) {
                             Icon(
                                 painter = painterResource(R.drawable.back),
                                 contentDescription = "back button",
@@ -103,10 +144,11 @@ fun ProductPreviewScreen(
 
                     Text(
                         text = "Starting Bid: ${product?.basePrice ?: 0}",
-                        fontSize =  20.sp,
+                        fontSize = 20.sp,
                         color = Color.Red,
-                        fontWeight = FontWeight.Bold
-                    )
+                        fontWeight = FontWeight.Bold,
+
+                        )
 
                     Box(
                         modifier = Modifier
@@ -137,7 +179,7 @@ fun ProductPreviewScreen(
                             )
                         }
 
-                        if (AuctionDetails== AuctionStatus.LIVE) {
+                        if (AuctionDetails == AuctionStatus.LIVE) {
                             Box(
                                 modifier = Modifier
                                     .size(100.dp)
@@ -185,7 +227,7 @@ fun ProductPreviewScreen(
                         fontWeight = FontWeight.Medium
                     )
 
-                    if (AuctionDetails== AuctionStatus.DETAILS_ADDED) {
+                    if (AuctionDetails == AuctionStatus.DETAILS_ADDED) {
                         AuctionDetailsBox(auction = auction)
                     } else {
                         Text(
@@ -206,7 +248,7 @@ fun ProductPreviewScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    if (AuctionDetails== AuctionStatus.LIVE) {
+                    if (AuctionDetails == AuctionStatus.LIVE) {
                         Box(
                             modifier = Modifier
                                 .height(340.dp)
@@ -230,11 +272,61 @@ fun ProductPreviewScreen(
                             }
                         }
                     }
+
+                    Text(
+                        text = "Comments",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = NavyBlue,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = addComment,
+                        onValueChange = { addComment = it},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .width(280.dp)
+                            .padding(8.dp)
+                            .height(70.dp)
+                            .padding(vertical = 8.dp),
+                        placeholder = { Text("Add Comment") },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val request = CommentRequest(addComment, product?.id ?: 0L, null )
+                                    commentViewModel.addComment(request)
+                                    addComment = ""
+                                    keyboardController?.hide()
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.send),
+                                    contentDescription = "send icon"
+                                )
+                            }
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Orange,
+                            focusedTextColor = NavyBlue,
+                            unfocusedBorderColor = Grey
+                        )
+                    )
+
+                    CommentThread(
+                        comments,
+                        onReply = { comment ->
+                            commentViewModel.selectComment(comment)
+                            commentDialog = true
+                        }
+                    )
+
                 }
             }
         }
 
-        if (AuctionDetails== AuctionStatus.LIVE) {
+        if (AuctionDetails == AuctionStatus.LIVE) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -261,9 +353,43 @@ fun ProductPreviewScreen(
                 }
             }
         }
+
+        if (commentDialog) {
+            AddCommentDialog(
+                onDismiss = { commentDialog = false },
+                onAddComment = { text ->
+                    val request = CommentRequest(text, product?.id ?: 0L, selectedComment?.id)
+
+                    commentViewModel.addComment(request)
+                }
+            )
+        }
+    }
+
+    if (AuctionDetails == AuctionStatus.ENDED) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.LightGray.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(CircleShape)
+                    .background(color = Red),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "AUCTION ENDED",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            }
+        }
     }
 }
-
 
 
 @Composable
@@ -318,31 +444,35 @@ fun AuctionDetailsBox(auction: AuctionResponse?) {
 }
 
 @Composable
-fun LatestBid(){
+fun LatestBid() {
     Box(
         modifier = Modifier
             .height(100.dp)
             .fillMaxWidth()
             .padding(8.dp)
-    ){
+    ) {
         Card(
             modifier = Modifier.fillMaxSize(),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White
             )
-        ){
+        ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(8.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-            ){
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     Image(
                         painter = painterResource(R.drawable.profile_picture_default),
                         contentDescription = "profile picture",
-                        modifier = Modifier.size(60.dp).padding(end = 8.dp)
+                        modifier = Modifier
+                            .size(60.dp)
+                            .padding(end = 8.dp)
                     )
 
                     Column(
@@ -352,7 +482,7 @@ fun LatestBid(){
                             text = "@Username",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color =  Color(0xFF0C1739)
+                            color = Color(0xFF0C1739)
                         )
                         Text(
                             text = "2 sec ago",
@@ -372,6 +502,53 @@ fun LatestBid(){
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddCommentDialog(
+    onDismiss: () -> Unit,
+    onAddComment: (String) -> Unit
+) {
+    var commentText by remember { mutableStateOf("") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Add Comment",
+                fontSize = 20.sp
+            )
+
+            OutlinedTextField(
+                value = commentText,
+                onValueChange = { commentText = it },
+                placeholder = { Text("Write your comment...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    if (commentText.isNotBlank()) {
+                        onAddComment(commentText)
+                        commentText = ""
+                        onDismiss()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Add Comment")
+            }
+        }
+    }
+}
+
 
 
 

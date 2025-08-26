@@ -160,7 +160,7 @@ fun HomeScreen(
 
             LazyRow {
                 items(filteredProducts){product ->
-                    ProductCard(product = product, navController = navController)
+                    ProductCard(product = product, navController = navController, productViewModel = productViewModel)
                 }
             }
 
@@ -208,7 +208,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(displayedProducts) { product ->
-                    ProductCard(product = product, navController = navController)
+                    ProductCard(product = product, navController = navController, productViewModel = productViewModel)
                 }
             }
         }
@@ -216,7 +216,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun ProductCard(product: ProductResponse, navController: NavController) {
+fun ProductCard(product: ProductResponse, navController: NavController, productViewModel: ProductViewModel) {
 
     val isLive = product.auctionStatus == AuctionStatus.LIVE
 
@@ -228,7 +228,7 @@ fun ProductCard(product: ProductResponse, navController: NavController) {
             .clickable(
 
                 onClick = {
-                    println("ProductCard NavController hash: ${navController.hashCode()}")
+                    productViewModel.selectProduct(product)
                     navController.navigate(Screen.ProductPreviewScreen.route)
                 }
             )
