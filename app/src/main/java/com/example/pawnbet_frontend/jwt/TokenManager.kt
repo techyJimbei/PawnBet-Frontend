@@ -18,6 +18,18 @@ class TokenManager(private val dataStore: DataStore<Preferences>) : TokenProvide
     companion object {
         val JWT_TOKEN = stringPreferencesKey("jwt_token")
         val USERNAME = stringPreferencesKey("username")
+        val USER_ID = stringPreferencesKey("user_id")
+    }
+
+
+    suspend fun saveUserId(userId: Long) {
+        dataStore.edit { it[USER_ID] = userId.toString() }
+    }
+
+    fun getUserId(): Long? = runBlocking {
+        dataStore.data.map { prefs ->
+            prefs[USER_ID]?.toLong()
+        }.firstOrNull()
     }
 
     override fun getToken(): String? = runBlocking {
@@ -36,10 +48,19 @@ class TokenManager(private val dataStore: DataStore<Preferences>) : TokenProvide
         dataStore.edit { it[USERNAME] = username }
     }
 
-    suspend fun saveAuthData(token: String, username: String) {
+    suspend fun clearToken() {
+        dataStore.edit {
+            it.remove(JWT_TOKEN)
+            it.remove(USERNAME)
+            it.remove(USER_ID)
+        }
+    }
+
+    suspend fun saveAuthData(token: String, username: String, userId: Long) {
         dataStore.edit {
             it[JWT_TOKEN] = token
             it[USERNAME] = username
+            it[USER_ID] = userId.toString()
         }
     }
 }

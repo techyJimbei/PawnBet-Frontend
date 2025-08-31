@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +34,7 @@ import androidx.navigation.NavController
 import com.example.pawnbet_frontend.ui.navigation.Screen
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
+import com.example.pawnbet_frontend.viewmodel.AuthState
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 
 @Composable
@@ -39,17 +42,17 @@ fun LoginScreen(
     navController: NavController,
     viewmodel: AuthViewModel
 ){
-
     val context = LocalContext.current
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val loginState by viewmodel.loginState.collectAsState()
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Spacer(modifier = Modifier.height(180.dp))
 
         Text(
@@ -61,7 +64,6 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(120.dp))
 
         Column(
-            modifier = Modifier,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -70,10 +72,6 @@ fun LoginScreen(
                 onValueChange = {username = it},
                 shape = RoundedCornerShape(20.dp),
                 label = {Text(text =  "Enter username/email", color = NavyBlue)},
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black
-                )
             )
 
             OutlinedTextField(
@@ -81,18 +79,10 @@ fun LoginScreen(
                 onValueChange = {password = it},
                 shape = RoundedCornerShape(20.dp),
                 label = {Text(text =  "Enter password", color = NavyBlue)},
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black
-                )
             )
 
             TextButton(onClick =  {}) {
-                Text(
-                    text = "forgot password ?",
-                    fontSize =  15.sp,
-                    color = NavyBlue
-                )
+                Text(text = "forgot password ?", fontSize = 15.sp, color = NavyBlue)
             }
         }
 
@@ -100,28 +90,33 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                println("LoginScreen NavController hash: ${navController.hashCode()}")
-
                 if (username.isNotBlank() && password.isNotBlank()) {
                     viewmodel.login(username, password)
-                    navController.navigate(Screen.MainScreen.route) {
-                        popUpTo(Screen.Onboarding.route) {inclusive = true}
-                    }
                 } else {
                     Toast.makeText(context, "Enter remaining fields", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier=Modifier
-                .width(280.dp)
-                .padding(8.dp)
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Orange,
-                contentColor = Color.White
-            )
+            modifier=Modifier.width(280.dp).padding(8.dp).height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Orange, contentColor = Color.White)
         ) {
             Text(text = "Login", fontSize = 20.sp)
         }
+    }
 
+    when(loginState) {
+        is AuthState.LoginSuccess -> {
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.MainScreen.route) {
+                    popUpTo(Screen.Onboarding.route) { inclusive = true }
+                }
+            }
+        }
+        is AuthState.Error -> {
+            val message = (loginState as AuthState.Error).message
+            LaunchedEffect(message) {
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+        else -> {  }
     }
 }

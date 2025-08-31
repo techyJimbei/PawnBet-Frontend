@@ -31,6 +31,8 @@ import com.example.pawnbet_frontend.viewmodel.CommentViewModel
 import com.example.pawnbet_frontend.viewmodel.CommentViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModelFactory
+import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
+import com.example.pawnbet_frontend.viewmodel.WishlistViewModelFactory
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash_screen")
@@ -72,6 +74,10 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         factory = CommentViewModelFactory(apiService, tokenManager)
     )
 
+    val wishlistViewModel: WishlistViewModel = viewModel (
+        factory = WishlistViewModelFactory(apiService, tokenManager)
+    )
+
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -94,7 +100,11 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Screen.MainScreen.route){
-            MainScreen(rootNavController = navController, productViewModel = productViewModel)
+            MainScreen(
+                rootNavController = navController,
+                productViewModel = productViewModel,
+                wishlistViewModel = wishlistViewModel
+                )
         }
 
         composable(Screen.ProductPreviewScreen.route){

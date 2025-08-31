@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pawnbet_frontend.R
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
+import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
 
 data class NavItem(
     val title: String,
@@ -40,7 +41,8 @@ data class NavItem(
 @Composable
 fun MainScreen(
     rootNavController: NavHostController,
-    productViewModel: ProductViewModel
+    productViewModel: ProductViewModel,
+    wishlistViewModel: WishlistViewModel
 ) {
     val tabNavController = rememberNavController()
 
@@ -88,7 +90,11 @@ fun MainScreen(
                 productViewModel = productViewModel
             ) }
             composable("auction_screen") { AuctionScreen() }
-            composable("wishlist_screen") { WishlistScreen() }
+            composable("wishlist_screen") { WishlistScreen(
+                productViewModel = productViewModel,
+                navController = rootNavController,
+                wishlistViewModel = wishlistViewModel
+            ) }
             composable("my_product_screen") { MyProductScreen() }
             composable("orders_screen") { OrdersScreen() }
         }

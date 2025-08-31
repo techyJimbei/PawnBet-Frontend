@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,7 +69,6 @@ import com.example.pawnbet_frontend.ui.theme.Red
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
 import com.example.pawnbet_frontend.viewmodel.CommentViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
-import org.w3c.dom.Comment
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -93,6 +91,8 @@ fun ProductPreviewScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val listState = rememberLazyListState()
+
+    var isWishlisted by remember { mutableStateOf(product?.isWishlisted ?: false) }
 
     LaunchedEffect(product?.id) {
         product?.let {
@@ -164,7 +164,12 @@ fun ProductPreviewScreen(
                         )
 
                         IconButton(
-                            onClick = {},
+                            onClick = {
+                                product?.let {
+                                    isWishlisted = !isWishlisted
+                                    productViewModel.toggleWishlist(it)
+                                }
+                            },
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .offset(x = 12.dp, y = 8.dp)
@@ -172,7 +177,9 @@ fun ProductPreviewScreen(
                                 .background(color = Color.White, shape = CircleShape)
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.unselected_heart),
+                                painter = painterResource(
+                                    if (isWishlisted) R.drawable.filled_heart else R.drawable.unselected_heart
+                                ),
                                 contentDescription = "Wishlist Icon",
                                 tint = Orange,
                                 modifier = Modifier.size(36.dp)

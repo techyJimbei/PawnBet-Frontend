@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.pawnbet_frontend.api.ApiEndPoints
 import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.model.ProductResponse
+import com.example.pawnbet_frontend.model.WishlistRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -29,6 +30,40 @@ class ProductViewModel(
     fun selectProduct(productResponse: ProductResponse){
         _selectedProduct.value = productResponse
     }
+
+    fun toggleWishlist(product: ProductResponse) {
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${tokenManager.getToken() ?: ""}"
+
+                if (product.isWishlisted) {
+                    val response = api.deleteWishlistProduct(token, product.id)
+                    if (response.isSuccessful) {
+                        _products.value = _products.value.map {
+                            if (it.id == product.id) it.copy(isWishlisted = false) else it
+                        }
+                        Log.e("Product", "Wishlist removed for product ${product.id}")
+                    } else {
+                        Log.e("Product", "Failed to remove from wishlist: ${response.errorBody()?.string()}")
+                    }
+                } else {
+                    val response = api.addWishlistProduct(token, WishlistRequest(product.id))
+                    if (response.isSuccessful) {
+                        _products.value = _products.value.map {
+                            if (it.id == product.id) it.copy(isWishlisted = true) else it
+                        }
+                        Log.e("Product", "Wishlist added for product ${product.id}")
+                    } else {
+                        Log.e("Product", "Failed to add to wishlist: ${response.errorBody()?.string()}")
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("Product", "Wishlist toggle failed: ${e.message}")
+            }
+        }
+    }
+
 
 
     fun getAllProduct(){

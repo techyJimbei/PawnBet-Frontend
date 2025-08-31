@@ -216,22 +216,23 @@ fun HomeScreen(
 }
 
 @Composable
-fun ProductCard(product: ProductResponse, navController: NavController, productViewModel: ProductViewModel) {
-
+fun ProductCard(
+    product: ProductResponse,
+    navController: NavController,
+    productViewModel: ProductViewModel
+) {
     val isLive = product.auctionStatus == AuctionStatus.LIVE
+    var isWishlisted = product.isWishlisted
 
     Box(
         modifier = Modifier
             .width(220.dp)
             .height(300.dp)
             .padding(8.dp)
-            .clickable(
-
-                onClick = {
-                    productViewModel.selectProduct(product)
-                    navController.navigate(Screen.ProductPreviewScreen.route)
-                }
-            )
+            .clickable {
+                productViewModel.selectProduct(product)
+                navController.navigate(Screen.ProductPreviewScreen.route)
+            }
     ) {
         Card(
             modifier = Modifier.fillMaxSize(),
@@ -242,12 +243,9 @@ fun ProductCard(product: ProductResponse, navController: NavController, productV
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(
-                        start = 8.dp,
-                        end = 8.dp,
-                        bottom = 8.dp
-                    )
+                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
             ) {
+
                 Text(
                     text = "Starting Bid: ${product.basePrice} INR",
                     color = Red,
@@ -285,7 +283,7 @@ fun ProductCard(product: ProductResponse, navController: NavController, productV
                 )
 
                 Text(
-                    text =  product.description,
+                    text = product.description,
                     color = Grey,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -294,31 +292,34 @@ fun ProductCard(product: ProductResponse, navController: NavController, productV
         }
 
         IconButton(
-            onClick = { /* handle click */ },
+            onClick = {
+                isWishlisted = !isWishlisted
+                productViewModel.toggleWishlist(product)
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .offset(y = 15.dp, x = 5.dp)
-                .size(20.dp)
-                .background(
-                    color = Color.White,
-                    shape = CircleShape
-                )
+                .size(28.dp)
+                .background(color = Color.White, shape = CircleShape)
         ) {
             Icon(
-                painter = painterResource(R.drawable.unselected_heart),
+                painter = painterResource(
+                    if (isWishlisted) R.drawable.filled_heart
+                    else R.drawable.unselected_heart
+                ),
                 contentDescription = "Wishlist Icon",
                 tint = Orange,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
-
+        // Live Badge
         if (isLive) {
             Box(
                 modifier = Modifier
                     .size(70.dp)
                     .align(Alignment.CenterStart)
-                    .offset(x = (55).dp)
+                    .offset(x = 55.dp)
                     .background(color = Red, shape = CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -332,4 +333,5 @@ fun ProductCard(product: ProductResponse, navController: NavController, productV
         }
     }
 }
+
 

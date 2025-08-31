@@ -9,8 +9,11 @@ import com.example.pawnbet_frontend.model.LoginResponse
 import com.example.pawnbet_frontend.model.ProductResponse
 import com.example.pawnbet_frontend.model.SignUpRequest
 import com.example.pawnbet_frontend.model.UserProfileResponse
+import com.example.pawnbet_frontend.model.WishlistRequest
+import com.example.pawnbet_frontend.model.WishlistResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -53,4 +56,15 @@ interface ApiEndPoints {
     //Bid endpoints
     @POST("/api/bid/{product_id}")
     suspend fun raiseBid(@Header("Authorization") token : String, @Body request : BidRequest): Response<BidRequest>
+
+
+    //Wishlist endpoints
+    @POST("/api/wishlist")
+    suspend fun addWishlistProduct(@Header("Authorization") token: String, @Body request: WishlistRequest): Response<Unit>
+
+    @GET("/api/wishlist")
+    suspend fun getWishlistProducts(@Header("Authorization") token: String): Response<List<WishlistResponse>>
+
+    @DELETE("/api/wishlist/{id}")
+    suspend fun deleteWishlistProduct(@Header("Authorization") token: String, @Path("id") id: Long): Response<Unit>
 }

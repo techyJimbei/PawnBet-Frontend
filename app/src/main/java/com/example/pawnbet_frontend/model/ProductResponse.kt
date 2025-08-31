@@ -12,5 +12,6 @@ data class ProductResponse (
     val auctionStatus: AuctionStatus?,
     val seller: UserProfileResponse,
     val imageUrl: String,
-    val createdAt: String
+    val createdAt: String?,
+    val isWishlisted: Boolean
 )

@@ -40,6 +40,7 @@ fun SplashScreen(
                 popUpTo(Screen.Splash.route) { inclusive = true }
             }
         }
+        authViewModel.getUserProfile()
     }
 
 
