@@ -95,7 +95,10 @@ fun MainScreen(
                 navController = rootNavController,
                 wishlistViewModel = wishlistViewModel
             ) }
-            composable("my_product_screen") { MyProductScreen() }
+            composable("my_product_screen") { MyProductScreen(
+                productViewModel = productViewModel,
+                navController = rootNavController
+            ) }
             composable("orders_screen") { OrdersScreen() }
         }
     }

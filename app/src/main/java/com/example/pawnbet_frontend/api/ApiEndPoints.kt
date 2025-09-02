@@ -6,6 +6,7 @@ import com.example.pawnbet_frontend.model.CommentRequest
 import com.example.pawnbet_frontend.model.CommentResponse
 import com.example.pawnbet_frontend.model.LoginRequest
 import com.example.pawnbet_frontend.model.LoginResponse
+import com.example.pawnbet_frontend.model.ProductRequest
 import com.example.pawnbet_frontend.model.ProductResponse
 import com.example.pawnbet_frontend.model.SignUpRequest
 import com.example.pawnbet_frontend.model.UserProfileResponse
@@ -41,6 +42,12 @@ interface ApiEndPoints {
 
     @GET("/api/product/search")
     suspend fun getSearchProducts(@Header("Authorization") token:String, @Query("keyword") keyword: String): Response<List<ProductResponse>>
+
+    @GET("/api/product/my")
+    suspend fun getMyProducts(@Header("Authorization") token: String): Response<List<ProductResponse>>
+
+    @POST("/api/product")
+    suspend fun listProduct(@Header("Authorization") token:String, @Body request: ProductRequest): Response<ProductResponse>
 
     // Auction endpoints
     @GET("/api/product/{id}/auction")

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pawnbet_frontend.api.ApiEndPoints
 import com.example.pawnbet_frontend.jwt.TokenManager
+import com.example.pawnbet_frontend.model.ProductRequest
 import com.example.pawnbet_frontend.model.ProductResponse
 import com.example.pawnbet_frontend.model.WishlistRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,9 @@ class ProductViewModel(
 
     private val _products = mutableStateOf<List<ProductResponse>>(emptyList())
     val products: State<List<ProductResponse>> = _products
+
+    private val _myProducts = mutableStateOf<List<ProductResponse>>(emptyList())
+    val myProducts: State<List<ProductResponse>> = _myProducts
 
     private val _searchProducts = mutableStateOf<List<ProductResponse>>(emptyList())
     val searchProducts: State<List<ProductResponse>> = _searchProducts
@@ -64,7 +68,45 @@ class ProductViewModel(
         }
     }
 
+    fun listProduct(request: ProductRequest){
+        viewModelScope.launch {
+            try{
+                val token = "Bearer ${tokenManager.getToken() ?: ""}"
+                val response = api.listProduct(token, request)
+                if(response.isSuccessful){
+                    val newProduct = response.body() !!
+                    _myProducts.value = _myProducts.value + newProduct
+                    api.getMyProducts(token)
+                    Log.e("Product", "Product added successfully")
+                }
+                else{
+                    Log.e("Product", "Product cannot be added")
+                }
+            }
+            catch(e: Exception){
+                Log.e("Product", "Exception occurred ${e.message}")
+            }
+        }
+    }
 
+    fun getMyProducts(){
+        viewModelScope.launch {
+            try{
+                val token = "Bearer ${tokenManager.getToken() ?: ""}"
+                val response = api.getMyProducts(token)
+                if(response.isSuccessful && response.body() != null){
+                    _myProducts.value = response.body() !!
+                    Log.e("Product", "My Product list received")
+                }
+                else{
+                    Log.e("Product", "My Product list is empty")
+                }
+            }
+            catch(e: Exception){
+                Log.e("Product", "Exception Occurred ${e.message}")
+            }
+        }
+    }
 
     fun getAllProduct(){
         viewModelScope.launch {
