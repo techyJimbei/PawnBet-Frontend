@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,6 +28,8 @@ import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import com.example.pawnbet_frontend.viewmodel.AuthViewModelFactory
+import com.example.pawnbet_frontend.viewmodel.BidViewModel
+import com.example.pawnbet_frontend.viewmodel.BidViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.CommentViewModel
 import com.example.pawnbet_frontend.viewmodel.CommentViewModelFactory
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
@@ -74,6 +77,10 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         factory = CommentViewModelFactory(apiService, tokenManager)
     )
 
+    val bidViewModel: BidViewModel = viewModel(
+        factory = BidViewModelFactory(apiService, tokenManager)
+    )
+
     val wishlistViewModel: WishlistViewModel = viewModel (
         factory = WishlistViewModelFactory(apiService, tokenManager)
     )
@@ -102,13 +109,22 @@ fun AppNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Screen.MainScreen.route){
             MainScreen(
                 rootNavController = navController,
+                authViewModel = authViewModel,
                 productViewModel = productViewModel,
-                wishlistViewModel = wishlistViewModel
+                wishlistViewModel = wishlistViewModel,
+                auctionViewModel = auctionViewModel,
+                tokenManager = tokenManager
                 )
         }
 
         composable(Screen.ProductPreviewScreen.route){
-            ProductPreviewScreen(productViewModel, auctionViewModel, commentViewModel, navController)
+            ProductPreviewScreen(
+                productViewModel,
+                auctionViewModel,
+                commentViewModel,
+                bidViewModel,
+                navController
+            )
         }
 
     }

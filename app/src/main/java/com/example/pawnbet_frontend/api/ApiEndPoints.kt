@@ -1,7 +1,9 @@
 package com.example.pawnbet_frontend.api
 
+import com.example.pawnbet_frontend.model.AuctionRequest
 import com.example.pawnbet_frontend.model.AuctionResponse
 import com.example.pawnbet_frontend.model.BidRequest
+import com.example.pawnbet_frontend.model.BidResponse
 import com.example.pawnbet_frontend.model.CommentRequest
 import com.example.pawnbet_frontend.model.CommentResponse
 import com.example.pawnbet_frontend.model.LoginRequest
@@ -18,6 +20,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -31,7 +34,7 @@ interface ApiEndPoints {
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     @POST("/api/auth/verify")
-    suspend fun verifyToken(@Header("Authorization") token : String): Boolean
+    suspend fun verifyToken(@Header("Authorization") token : String): Response<Boolean>
 
     @GET("/api/auth/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserProfileResponse>
@@ -49,7 +52,14 @@ interface ApiEndPoints {
     @POST("/api/product")
     suspend fun listProduct(@Header("Authorization") token:String, @Body request: ProductRequest): Response<ProductResponse>
 
+    @PUT("/api/product/{product_id}")
+    suspend fun editProduct(@Header("Authorization") token: String, @Body request: ProductRequest, @Path("product_id") id: Long): Response<ProductResponse>
+
     // Auction endpoints
+
+    @POST("/api/product/{id}/auction")
+    suspend fun addAuctionDetails(@Header("Authorization") token: String, @Body request: AuctionRequest, @Path("id") id: Long?): Response<AuctionResponse>
+
     @GET("/api/product/{id}/auction")
     suspend fun getAuctionDetails(@Header("Authorization") token: String, @Path("id") productId: Long): Response<AuctionResponse>
 
@@ -62,8 +72,13 @@ interface ApiEndPoints {
 
     //Bid endpoints
     @POST("/api/bid/{product_id}")
-    suspend fun raiseBid(@Header("Authorization") token : String, @Body request : BidRequest): Response<BidRequest>
+    suspend fun raiseBid(@Header("Authorization") token : String, @Body request : BidRequest, @Path("product_id") id: Long?): Response<BidResponse>
 
+    @GET("/api/bid/{product_id}")
+    suspend fun getBids(@Header("Authorization") token : String, @Path("product_id") id: Long): Response<List<BidResponse>>
+
+    @GET("/api/bid/highest/{product_id}")
+    suspend fun getHighestBid(@Header("Authorization") token: String, @Path("product_id") id: Long): Response<BidResponse>
 
     //Wishlist endpoints
     @POST("/api/wishlist")

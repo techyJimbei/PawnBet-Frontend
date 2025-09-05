@@ -4,5 +4,5 @@ import java.math.BigDecimal
 
 data class BidRequest(
     val bidAmount: BigDecimal,
-    val productId: Long
+    val productId: Long?
 )

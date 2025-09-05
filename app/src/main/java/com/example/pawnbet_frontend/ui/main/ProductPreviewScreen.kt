@@ -4,7 +4,6 @@ package com.example.pawnbet_frontend.ui.main
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -55,20 +56,47 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pawnbet_frontend.R
 import com.example.pawnbet_frontend.model.AuctionResponse
 import com.example.pawnbet_frontend.model.AuctionStatus
+import com.example.pawnbet_frontend.model.BidRequest
+import com.example.pawnbet_frontend.model.BidResponse
 import com.example.pawnbet_frontend.model.CommentRequest
-import com.example.pawnbet_frontend.ui.navigation.Screen
 import com.example.pawnbet_frontend.ui.theme.Grey
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.ui.theme.Red
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.BidViewModel
 import com.example.pawnbet_frontend.viewmodel.CommentViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getTimeRemaining(endTime: String): String {
+    return try {
+        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        val end = LocalDateTime.parse(endTime, formatter)
+        val now = LocalDateTime.now()
+
+        if (end.isBefore(now)) {
+            "Auction Ended"
+        } else {
+            val duration = Duration.between(now, end)
+            val hours = duration.toHours()
+            val minutes = (duration.toMinutes() % 60)
+            val seconds = (duration.seconds % 60)
+            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        }
+    } catch (e: Exception) {
+        "--:--:--"
+    }
+}
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -77,12 +105,17 @@ fun ProductPreviewScreen(
     productViewModel: ProductViewModel,
     auctionViewModel: AuctionViewModel,
     commentViewModel: CommentViewModel,
+    bidViewModel: BidViewModel,
     navController: NavController
 ) {
     val product by productViewModel.selectedProduct.collectAsState()
     val comments by commentViewModel.comments
     val auction by auctionViewModel.auctionDetails
-    val AuctionDetails by remember { mutableStateOf(product?.auctionStatus) }
+    val productAuctionStatus = product?.auctionStatus
+
+    val bids by bidViewModel.bids
+    var addBidDialog by remember { mutableStateOf(false) }
+    val highestBid by bidViewModel.highest.collectAsState()
 
     var commentDialog by remember { mutableStateOf(false) }
     val selectedComment by commentViewModel.selectedComment.collectAsState()
@@ -98,6 +131,8 @@ fun ProductPreviewScreen(
         product?.let {
             auctionViewModel.getAuctionDetails(it.id)
             commentViewModel.getAllComments(it.id)
+            bidViewModel.getBids(it.id)
+            bidViewModel.getHighestBid(it.id)
         }
     }
 
@@ -111,7 +146,12 @@ fun ProductPreviewScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(
+                    top = 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = if (productAuctionStatus == AuctionStatus.LIVE) 80.dp else 16.dp
+                )
         ) {
             item {
                 Column(
@@ -123,9 +163,7 @@ fun ProductPreviewScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         IconButton(onClick = {
-                            navController.navigate(Screen.MainScreen.route) {
-                                popUpTo(Screen.ProductPreviewScreen.route) { inclusive = true }
-                            }
+                            navController.popBackStack()
                         }) {
                             Icon(
                                 painter = painterResource(R.drawable.back),
@@ -186,7 +224,7 @@ fun ProductPreviewScreen(
                             )
                         }
 
-                        if (AuctionDetails == AuctionStatus.LIVE) {
+                        if (productAuctionStatus == AuctionStatus.LIVE) {
                             Box(
                                 modifier = Modifier
                                     .size(100.dp)
@@ -207,12 +245,15 @@ fun ProductPreviewScreen(
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                     )
-                                    Text(
-                                        text = "ends in:\n1:00:39",
-                                        fontSize = 16.sp,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    auction?.auctionEndTime?.let { end ->
+                                        Text(
+                                            text = "ends in:\n${getTimeRemaining(end)}",
+                                            fontSize = 16.sp,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+
                                 }
                             }
                         }
@@ -234,7 +275,7 @@ fun ProductPreviewScreen(
                         fontWeight = FontWeight.Medium
                     )
 
-                    if (AuctionDetails == AuctionStatus.DETAILS_ADDED) {
+                    if (auction!=null) {
                         AuctionDetailsBox(auction = auction)
                     } else {
                         Text(
@@ -248,14 +289,16 @@ fun ProductPreviewScreen(
                         )
                     }
 
-                    Text(
-                        text = "Current Highest Bid : 1200",
-                        fontSize = 30.sp,
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if(productAuctionStatus == AuctionStatus.LIVE){
+                        Text(
+                            text = "Current Highest Bid : ${highestBid?.bidAmount}",
+                            fontSize = 30.sp,
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-                    if (AuctionDetails == AuctionStatus.LIVE) {
+                    if (productAuctionStatus == AuctionStatus.LIVE) {
                         Box(
                             modifier = Modifier
                                 .height(340.dp)
@@ -272,8 +315,8 @@ fun ProductPreviewScreen(
                                 shape = RoundedCornerShape(20.dp)
                             ) {
                                 LazyColumn {
-                                    item {
-                                        LatestBid()
+                                    items(bids) {bid->
+                                        LatestBid(bid = bid)
                                     }
                                 }
                             }
@@ -333,7 +376,7 @@ fun ProductPreviewScreen(
             }
         }
 
-        if (AuctionDetails == AuctionStatus.LIVE) {
+        if (productAuctionStatus == AuctionStatus.LIVE) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -342,7 +385,9 @@ fun ProductPreviewScreen(
                     .height(70.dp)
             ) {
                 TextButton(
-                    onClick = {},
+                    onClick = {
+                        addBidDialog = true
+                    },
                     modifier = Modifier.fillMaxSize(),
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = Color.White
@@ -371,9 +416,17 @@ fun ProductPreviewScreen(
                 }
             )
         }
+
+        if(addBidDialog){
+            AddBidDialog(
+                bidViewModel,
+                productId = product?.id,
+                onDismiss = {addBidDialog = false}
+            )
+        }
     }
 
-    if (AuctionDetails == AuctionStatus.ENDED) {
+    if (productAuctionStatus == AuctionStatus.ENDED) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -398,13 +451,62 @@ fun ProductPreviewScreen(
     }
 }
 
+@Composable
+fun AddBidDialog(
+    bidViewModel: BidViewModel,
+    productId: Long?,
+    onDismiss: () -> Unit
+) {
+    var bidPrice by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .width(350.dp)
+                .height(220.dp)
+                .background(Color.White, shape = RoundedCornerShape(16.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            OutlinedTextField(
+                value = bidPrice,
+                onValueChange = { bidPrice = it },
+                label = { Text("Add your price") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    val request = BidRequest(
+                        bidAmount = bidPrice.toBigDecimal(),
+                        productId = productId
+                    )
+
+                    bidViewModel.raiseBid(productId, request)
+                    onDismiss() // ✅ now actually closes the dialog
+                },
+                colors = ButtonDefaults.buttonColors(
+                    contentColor = Color.White,
+                    containerColor = Orange
+                ),
+                modifier = Modifier
+                    .height(50.dp)
+                    .width(280.dp)
+            ) {
+                Text(text = "Bid", fontSize = 20.sp)
+            }
+        }
+    }
+}
+
 
 @Composable
 fun AuctionDetailsBox(auction: AuctionResponse?) {
     Box(
         modifier = Modifier
             .width(350.dp)
-            .height(200.dp)
+            .height(220.dp)
             .padding(8.dp)
             .fillMaxWidth()
     ) {
@@ -425,33 +527,41 @@ fun AuctionDetailsBox(auction: AuctionResponse?) {
                     text = "Auction Details",
                     color = Color.Red,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 30.sp,
+                    fontSize = 24.sp,
                     modifier = Modifier
                         .padding(top = 6.dp, bottom = 6.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Start At:  ${auction?.auctionStartTime}",
-                    color = Color(0xFF0C1739),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "End At:  ${auction?.auctionEndTime}",
-                    color = Color(0xFF0C1739),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                auction?.auctionStartTime?.let { start ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Start:", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0C1739))
+                        Text(start.split("T")[0], fontSize = 16.sp, color = Color(0xFF0C1739)) // Date
+                        Text(start.split("T")[1].substring(0, 5), fontSize = 16.sp, color = Color(0xFF0C1739)) // Time
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                auction?.auctionEndTime?.let { end ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("End:", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0C1739))
+                        Text(end.split("T")[0], fontSize = 16.sp, color = Color(0xFF0C1739)) // Date
+                        Text(end.split("T")[1].substring(0, 5), fontSize = 16.sp, color = Color(0xFF0C1739)) // Time
+                    }
+                }
+            }
         }
     }
 }
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LatestBid() {
+fun LatestBid(
+    bid: BidResponse
+) {
     Box(
         modifier = Modifier
             .height(100.dp)
@@ -474,9 +584,9 @@ fun LatestBid() {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.profile_picture_default),
-                        contentDescription = "profile picture",
+                    AsyncImage(
+                        model = bid.bidder.profileImageUrl ?: R.drawable.profile_picture_default,
+                        contentDescription = "bidder pfp",
                         modifier = Modifier
                             .size(60.dp)
                             .padding(end = 8.dp)
@@ -486,13 +596,13 @@ fun LatestBid() {
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "@Username",
+                            text = "@"+bid.bidder.username,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0C1739)
                         )
                         Text(
-                            text = "2 sec ago",
+                            text = formatTimeAgo(bid.createdAt),
                             color = Color.DarkGray,
                             fontSize = 16.sp,
                         )
@@ -500,7 +610,7 @@ fun LatestBid() {
                 }
 
                 Text(
-                    text = "1200 INR",
+                    text = "${bid.bidAmount }INR",
                     color = Color.Red,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold

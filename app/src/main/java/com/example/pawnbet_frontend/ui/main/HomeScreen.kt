@@ -31,19 +31,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -51,27 +57,37 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.pawnbet_frontend.R
+import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.model.AuctionStatus
 import com.example.pawnbet_frontend.model.ProductResponse
 import com.example.pawnbet_frontend.ui.navigation.Screen
+import com.example.pawnbet_frontend.ui.theme.DarkGrey
 import com.example.pawnbet_frontend.ui.theme.Grey
 import com.example.pawnbet_frontend.ui.theme.LightGrey
 import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.ui.theme.Red
+import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
     productViewModel: ProductViewModel,
-    navController: NavController
+    navController: NavController,
+    tokenManager: TokenManager,
+    authViewModel: AuthViewModel
 ) {
-    println("HomeScreen NavController hash: ${navController.hashCode()}")
+    val profile by authViewModel.profile.collectAsState()
+    
+    var dropDownMenu by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -93,6 +109,7 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         productViewModel.getAllProduct()
+        authViewModel.getUserProfile()
     }
 
     val tags = listOf(
@@ -124,10 +141,13 @@ fun HomeScreen(
                     color = NavyBlue,
                     modifier = Modifier.padding(top =  8.dp)
                 )
-                Image(
-                    painter = painterResource(R.drawable.profile_picture_default),
-                    contentDescription = "profile picture",
-                    modifier = Modifier.size(70.dp)
+                AsyncImage(
+                    model = profile ?: R.drawable.profile_picture_default,
+                    contentDescription = "Profile image",
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(shape = CircleShape)
+                        .clickable(onClick = {dropDownMenu = true})
                 )
             }
 
@@ -149,7 +169,7 @@ fun HomeScreen(
                             .height(50.dp)
                             .padding(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Orange,
+                            containerColor = if(selectedTag == tag) DarkGrey else Orange,
                             contentColor = Color.White
                         )
                     ) {
@@ -212,6 +232,34 @@ fun HomeScreen(
                 }
             }
         }
+        if (dropDownMenu) {
+            DropdownMenu(
+                expanded = dropDownMenu,
+                onDismissRequest = { dropDownMenu = false },
+                offset = DpOffset(0.dp, 8.dp)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Profile") },
+                    onClick = {
+                        dropDownMenu = false
+                    }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Logout") },
+                    onClick = {
+                        dropDownMenu = false
+                        coroutineScope.launch {
+                            tokenManager.clearToken()
+                        }
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -222,6 +270,7 @@ fun ProductCard(
     productViewModel: ProductViewModel
 ) {
     val isLive = product.auctionStatus == AuctionStatus.LIVE
+    val isEnded = product.auctionStatus == AuctionStatus.ENDED
     var isWishlisted = product.isWishlisted
 
     Box(
@@ -231,7 +280,9 @@ fun ProductCard(
             .padding(8.dp)
             .clickable {
                 productViewModel.selectProduct(product)
-                navController.navigate(Screen.ProductPreviewScreen.route)
+                navController.navigate(Screen.ProductPreviewScreen.route){
+                    launchSingleTop = true
+                }
             }
     ) {
         Card(
@@ -313,13 +364,12 @@ fun ProductCard(
             )
         }
 
-        // Live Badge
         if (isLive) {
             Box(
                 modifier = Modifier
                     .size(70.dp)
                     .align(Alignment.CenterStart)
-                    .offset(x = 55.dp)
+                    .offset(x = -(8).dp)
                     .background(color = Red, shape = CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -328,6 +378,22 @@ fun ProductCard(
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        if (isEnded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Gray.copy(alpha = 0.5f))
+                    .clip(shape = RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "SOLD",
+                    color = Red,
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
         }

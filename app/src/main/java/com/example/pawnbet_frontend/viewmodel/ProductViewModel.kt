@@ -31,9 +31,31 @@ class ProductViewModel(
     private val _selectedProduct = MutableStateFlow<ProductResponse?>(null)
     val selectedProduct: StateFlow<ProductResponse?> = _selectedProduct
 
+    private val _auctionSelectedProduct = MutableStateFlow<ProductResponse?>(null)
+    val auctionSelectedProduct: StateFlow<ProductResponse?> = _auctionSelectedProduct
+
     fun selectProduct(productResponse: ProductResponse){
         _selectedProduct.value = productResponse
     }
+
+    fun auctionSelectProduct(productResponse : ProductResponse){
+        _auctionSelectedProduct.value = productResponse
+    }
+
+    private val _startTime = mutableStateOf("")
+    val startTime: State<String> = _startTime
+
+    private val _endTime = mutableStateOf("")
+    val endTime: State<String> = _endTime
+
+    fun setStartTime(time: String) {
+        _startTime.value = time
+    }
+
+    fun setEndTime(time: String) {
+        _endTime.value = time
+    }
+
 
     fun toggleWishlist(product: ProductResponse) {
         viewModelScope.launch {
@@ -76,7 +98,6 @@ class ProductViewModel(
                 if(response.isSuccessful){
                     val newProduct = response.body() !!
                     _myProducts.value = _myProducts.value + newProduct
-                    api.getMyProducts(token)
                     Log.e("Product", "Product added successfully")
                 }
                 else{
@@ -113,16 +134,48 @@ class ProductViewModel(
             try{
                 val token = "Bearer ${tokenManager.getToken() ?: ""}"
                 val response = api.getAllProducts(token)
-                if(response.isSuccessful && response.body() != null){
-                    _products.value = response.body()!!
-                    Log.e("Product", "Product data received")
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        _products.value = body
+                        Log.e("Product", "Product data received: ${body.size} items")
+                    } else {
+                        Log.e("Product", "Response successful but body is null")
+                    }
+                } else {
+                    Log.e("Product", "Error fetching products: ${response.code()} - ${response.message()} - ${response.errorBody()?.string()}")
                 }
-                else{
-                    Log.e("Product", "Product data is null")
-                }
+
             }
             catch(e: Exception){
                 Log.e("Product", "Cannot retrieve data"+e.message)
+            }
+        }
+    }
+
+    fun editProduct(request: ProductRequest, id: Long){
+        viewModelScope.launch {
+            try{
+                val token = "Bearer ${tokenManager.getToken() ?: ""}"
+                val response = api.editProduct(token, request, id)
+                if(response.isSuccessful && response.body() != null){
+                    val updatedProduct = response.body()!!
+
+                    _products.value = _products.value.map {
+                        if (it.id == id) updatedProduct else it
+                    }
+
+                    _myProducts.value = _myProducts.value.map {
+                        if (it.id == id) updatedProduct else it
+                    }
+                    Log.e("Product", "Product edited successfully")
+                }
+                else{
+                    Log.e("Product", "product cannot be edited")
+                }
+            }
+            catch(e: Exception){
+                Log.e("product", "Exception occurred" + e.message)
             }
         }
     }

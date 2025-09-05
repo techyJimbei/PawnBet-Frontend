@@ -26,11 +26,11 @@ class AuthViewModel(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
-    var username by mutableStateOf<String?>(null)
-        private set
+    private val _profile = MutableStateFlow<String?>("")
+    val profile: StateFlow<String?> = _profile
 
-    var profilePicture by mutableStateOf<String?>(null)
-        private set
+    private val _username = MutableStateFlow<String>("")
+    val username: StateFlow<String> = _username
 
     private val _loginState = MutableStateFlow<AuthState>(AuthState.Idle)
     val loginState: StateFlow<AuthState> = _loginState
@@ -65,7 +65,7 @@ class AuthViewModel(
                 val response = api.login(LoginRequest(username, password))
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body != null && !body.token.isNullOrEmpty()) {
+                    if (body != null && body.token.isNotEmpty()) {
                         tokenManager.saveToken(body.token)
                         Log.e("Auth", "Login Successful")
                         _loginState.value = AuthState.LoginSuccess
@@ -90,7 +90,8 @@ class AuthViewModel(
             false
         } else {
             try {
-                api.verifyToken("Bearer $token")
+                val response = api.verifyToken("Bearer $token")
+                response.isSuccessful && (response.body() == true)
             } catch (e: Exception) {
                 false
             }
@@ -113,8 +114,8 @@ class AuthViewModel(
                     if (body != null) {
                         tokenManager.saveUserId(body.id)
                         tokenManager.saveUsername(body.username)
-                        username = body.username
-                        profilePicture = body.profileImageUrl
+                        _profile.value = body.profileImageUrl.toString()
+                        _username.value = body.username
                         Log.d("Auth", "Profile fetched successfully")
                     }
                 } else {

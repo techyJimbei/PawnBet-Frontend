@@ -1,5 +1,7 @@
 package com.example.pawnbet_frontend.ui.main
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -27,7 +29,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pawnbet_frontend.R
+import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.ui.theme.Orange
+import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.AuthViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
 
@@ -38,11 +43,15 @@ data class NavItem(
     val unselectedIcon: Int
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScreen(
     rootNavController: NavHostController,
+    authViewModel: AuthViewModel,
     productViewModel: ProductViewModel,
-    wishlistViewModel: WishlistViewModel
+    wishlistViewModel: WishlistViewModel,
+    auctionViewModel: AuctionViewModel,
+    tokenManager: TokenManager
 ) {
     val tabNavController = rememberNavController()
 
@@ -87,9 +96,15 @@ fun MainScreen(
         ) {
             composable("home_screen") { HomeScreen(
                 navController = rootNavController,
-                productViewModel = productViewModel
+                productViewModel = productViewModel,
+                authViewModel = authViewModel,
+                tokenManager = tokenManager
             ) }
-            composable("auction_screen") { AuctionScreen() }
+            composable("auction_screen") { AuctionScreen(
+                productViewModel = productViewModel,
+                auctionViewModel = auctionViewModel,
+                navController = rootNavController
+            ) }
             composable("wishlist_screen") { WishlistScreen(
                 productViewModel = productViewModel,
                 navController = rootNavController,
@@ -97,7 +112,8 @@ fun MainScreen(
             ) }
             composable("my_product_screen") { MyProductScreen(
                 productViewModel = productViewModel,
-                navController = rootNavController
+                navController = rootNavController,
+                auctionViewModel = auctionViewModel
             ) }
             composable("orders_screen") { OrdersScreen() }
         }
