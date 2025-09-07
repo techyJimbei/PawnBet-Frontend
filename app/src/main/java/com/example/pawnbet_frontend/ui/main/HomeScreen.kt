@@ -1,7 +1,8 @@
 package com.example.pawnbet_frontend.ui.main
 
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -74,18 +75,26 @@ import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.ui.theme.Red
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
+import com.example.pawnbet_frontend.viewmodel.OrderViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheetResult
+
+
+
 
 @Composable
 fun HomeScreen(
     productViewModel: ProductViewModel,
     navController: NavController,
+    orderViewModel: OrderViewModel,
     tokenManager: TokenManager,
     authViewModel: AuthViewModel
 ) {
     val profile by authViewModel.profile.collectAsState()
-    
+
     var dropDownMenu by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -180,7 +189,12 @@ fun HomeScreen(
 
             LazyRow {
                 items(filteredProducts){product ->
-                    ProductCard(product = product, navController = navController, productViewModel = productViewModel)
+                    ProductCard(
+                        product = product,
+                        navController = navController,
+                        productViewModel = productViewModel,
+                        orderViewModel = orderViewModel
+                    )
                 }
             }
 
@@ -207,7 +221,7 @@ fun HomeScreen(
                             painter = painterResource(R.drawable.search),
                             contentDescription = "Search Icon",
 
-                        )
+                            )
                     }
                 },
                 singleLine = true,
@@ -228,7 +242,12 @@ fun HomeScreen(
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(displayedProducts) { product ->
-                    ProductCard(product = product, navController = navController, productViewModel = productViewModel)
+                    ProductCard(
+                        product = product,
+                        navController = navController,
+                        productViewModel = productViewModel,
+                        orderViewModel = orderViewModel
+                    )
                 }
             }
         }
@@ -236,7 +255,7 @@ fun HomeScreen(
             DropdownMenu(
                 expanded = dropDownMenu,
                 onDismissRequest = { dropDownMenu = false },
-                offset = DpOffset(0.dp, 8.dp)
+                offset = DpOffset(x = 280.dp, y = 200.dp)
             ) {
                 DropdownMenuItem(
                     text = { Text("Profile") },
@@ -263,15 +282,31 @@ fun HomeScreen(
     }
 }
 
+
 @Composable
 fun ProductCard(
     product: ProductResponse,
+    orderViewModel: OrderViewModel,
     navController: NavController,
     productViewModel: ProductViewModel
 ) {
     val isLive = product.auctionStatus == AuctionStatus.LIVE
     val isEnded = product.auctionStatus == AuctionStatus.ENDED
-    var isWishlisted = product.isWishlisted
+    val isOrderCreated = product.auctionStatus == AuctionStatus.ORDER_CREATED
+    var isWishlisted by remember { mutableStateOf(product.isWishlisted) }
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var paymentSheet: PaymentSheet? = remember { null }
+
+    fun presentPaymentSheet(clientSecret: String) {
+        paymentSheet?.presentWithPaymentIntent(
+            clientSecret,
+            PaymentSheet.Configuration(merchantDisplayName = "Pawnbet")
+        )
+    }
+
 
     Box(
         modifier = Modifier
@@ -280,7 +315,7 @@ fun ProductCard(
             .padding(8.dp)
             .clickable {
                 productViewModel.selectProduct(product)
-                navController.navigate(Screen.ProductPreviewScreen.route){
+                navController.navigate(Screen.ProductPreviewScreen.route) {
                     launchSingleTop = true
                 }
             }
@@ -294,18 +329,15 @@ fun ProductCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                    .padding(8.dp)
             ) {
-
                 Text(
                     text = "Starting Bid: ${product.basePrice} INR",
                     color = Red,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .padding(top = 8.dp, bottom = 8.dp)
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 AsyncImage(
@@ -320,9 +352,7 @@ fun ProductCard(
                 Text(
                     text = product.tag ?: "No tag",
                     color = Orange,
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
 
@@ -338,6 +368,117 @@ fun ProductCard(
                     color = Grey,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        if (isLive) {
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-8).dp)
+                    .background(color = Red, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "LIVE",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (isEnded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Gray.copy(alpha = 0.5f))
+                    .clip(RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "SOLD",
+                    color = Red,
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+
+        if (isOrderCreated) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.Gray.copy(alpha = 0.5f))
+            )
+
+            Text(
+                text = "AUCTION WON",
+                color = Red,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Center)
+            )
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val amountInPaise = product.basePrice.multiply(BigDecimal(100)).toInt()
+                        orderViewModel.createPaymentIntent(amountInPaise) { clientSecret ->
+
+                            paymentSheet = PaymentSheet.Builder { result ->
+                                when (result) {
+                                    is PaymentSheetResult.Completed -> {
+                                        orderViewModel.addPayment(product.id)
+                                        Toast.makeText(
+                                            context,
+                                            "Payment Successful!",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+
+                                    is PaymentSheetResult.Canceled -> {
+                                        Toast.makeText(
+                                            context,
+                                            "Payment Canceled",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+
+                                    is PaymentSheetResult.Failed -> {
+                                        Toast.makeText(
+                                            context,
+                                            "Payment Failed: ${result.error.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            }.build(context as ComponentActivity)
+
+                            presentPaymentSheet(clientSecret)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp)
+                    .width(150.dp)
+                    .height(50.dp)
+                    .offset(y = 36.dp, x = (-8).dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Red,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text(
+                    text = "Pay",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontStyle = FontStyle.Italic
                 )
             }
         }
@@ -363,41 +504,5 @@ fun ProductCard(
                 modifier = Modifier.size(24.dp)
             )
         }
-
-        if (isLive) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .align(Alignment.CenterStart)
-                    .offset(x = -(8).dp)
-                    .background(color = Red, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "LIVE",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        if (isEnded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Gray.copy(alpha = 0.5f))
-                    .clip(shape = RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "SOLD",
-                    color = Red,
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-        }
     }
 }
-
-

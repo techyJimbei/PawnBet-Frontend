@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pawnbet_frontend.ui.theme.Beige
 import com.example.pawnbet_frontend.ui.theme.Orange
+import com.example.pawnbet_frontend.viewmodel.OrderViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
 
@@ -29,6 +30,7 @@ import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
 fun WishlistScreen(
     productViewModel: ProductViewModel,
     navController: NavController,
+    orderViewModel: OrderViewModel,
     wishlistViewModel: WishlistViewModel
 ) {
     val listState = rememberLazyListState()
@@ -69,7 +71,8 @@ fun WishlistScreen(
                 ProductCard(
                     product = product.product,
                     navController = navController,
-                    productViewModel = productViewModel
+                    productViewModel = productViewModel,
+                    orderViewModel = orderViewModel
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }

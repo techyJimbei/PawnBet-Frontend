@@ -8,6 +8,8 @@ import com.example.pawnbet_frontend.model.CommentRequest
 import com.example.pawnbet_frontend.model.CommentResponse
 import com.example.pawnbet_frontend.model.LoginRequest
 import com.example.pawnbet_frontend.model.LoginResponse
+import com.example.pawnbet_frontend.model.OrderResponse
+import com.example.pawnbet_frontend.model.PaymentRequest
 import com.example.pawnbet_frontend.model.ProductRequest
 import com.example.pawnbet_frontend.model.ProductResponse
 import com.example.pawnbet_frontend.model.SignUpRequest
@@ -89,4 +91,19 @@ interface ApiEndPoints {
 
     @DELETE("/api/wishlist/{id}")
     suspend fun deleteWishlistProduct(@Header("Authorization") token: String, @Path("id") id: Long): Response<Unit>
+
+    //Orders endpoints
+    @GET("/api/order")
+    suspend fun getOrders(@Header("Authorization") token: String): Response<List<OrderResponse>>
+
+    @GET("/api/product/auction/my")
+    suspend fun getWinningAuctions(@Header("Authorization") token: String): Response<List<ProductResponse>>
+
+    // Payment endpoints
+    @POST("/api/payment/create-payment-intent")
+    suspend fun createPaymentIntent(@Header("Authorization") token: String, @Body request: PaymentRequest): Response<Map<String, String>>
+
+    @POST("/api/pay/{product_id}")
+    suspend fun addPayment(@Header("Authorization") token: String, @Path("product_id") id: Long): Response<OrderResponse>
+
 }

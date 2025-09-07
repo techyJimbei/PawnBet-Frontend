@@ -426,7 +426,7 @@ fun ProductPreviewScreen(
         }
     }
 
-    if (productAuctionStatus == AuctionStatus.ENDED) {
+    if (productAuctionStatus == AuctionStatus.ENDED || productAuctionStatus == AuctionStatus.ORDER_CREATED) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -473,7 +473,11 @@ fun AddBidDialog(
                 value = bidPrice,
                 onValueChange = { bidPrice = it },
                 label = { Text("Add your price") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
+                )
             )
 
             Button(

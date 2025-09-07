@@ -65,6 +65,7 @@ import com.example.pawnbet_frontend.ui.theme.NavyBlue
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.ui.theme.Red
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.OrderViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import java.util.Calendar
 
@@ -74,6 +75,7 @@ import java.util.Calendar
 fun MyProductScreen(
     productViewModel: ProductViewModel,
     auctionViewModel: AuctionViewModel,
+    orderViewModel: OrderViewModel,
     navController: NavController
 ) {
 
@@ -251,7 +253,8 @@ fun MyProductScreen(
                     ProductCard(
                         product = product,
                         navController = navController,
-                        productViewModel = productViewModel
+                        productViewModel = productViewModel,
+                        orderViewModel = orderViewModel
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     if (product.auctionStatus == AuctionStatus.YET_TO_DECLARE) {
@@ -316,10 +319,11 @@ fun MyProductScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .height(500.dp)
+                                    .height(400.dp)
                                     .width(500.dp)
                                     .background(Color.White)
-                                    .clip(shape = RoundedCornerShape(20.dp))
+                                    .clip(shape = RoundedCornerShape(20.dp)),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Column(
                                     modifier = Modifier

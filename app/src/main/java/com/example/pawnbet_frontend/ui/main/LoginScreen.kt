@@ -72,6 +72,10 @@ fun LoginScreen(
                 onValueChange = {username = it},
                 shape = RoundedCornerShape(20.dp),
                 label = {Text(text =  "Enter username/email", color = NavyBlue)},
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
+                )
             )
 
             OutlinedTextField(
@@ -79,6 +83,10 @@ fun LoginScreen(
                 onValueChange = {password = it},
                 shape = RoundedCornerShape(20.dp),
                 label = {Text(text =  "Enter password", color = NavyBlue)},
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
+                )
             )
 
             TextButton(onClick =  {}) {

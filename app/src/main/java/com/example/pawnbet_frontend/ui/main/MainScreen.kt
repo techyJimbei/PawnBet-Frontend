@@ -33,6 +33,7 @@ import com.example.pawnbet_frontend.jwt.TokenManager
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
 import com.example.pawnbet_frontend.viewmodel.AuthViewModel
+import com.example.pawnbet_frontend.viewmodel.OrderViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import com.example.pawnbet_frontend.viewmodel.WishlistViewModel
 
@@ -51,6 +52,7 @@ fun MainScreen(
     productViewModel: ProductViewModel,
     wishlistViewModel: WishlistViewModel,
     auctionViewModel: AuctionViewModel,
+    orderViewModel: OrderViewModel,
     tokenManager: TokenManager
 ) {
     val tabNavController = rememberNavController()
@@ -98,24 +100,32 @@ fun MainScreen(
                 navController = rootNavController,
                 productViewModel = productViewModel,
                 authViewModel = authViewModel,
-                tokenManager = tokenManager
+                tokenManager = tokenManager,
+                orderViewModel = orderViewModel
             ) }
             composable("auction_screen") { AuctionScreen(
                 productViewModel = productViewModel,
                 auctionViewModel = auctionViewModel,
-                navController = rootNavController
+                navController = rootNavController,
+                orderViewModel = orderViewModel
             ) }
             composable("wishlist_screen") { WishlistScreen(
                 productViewModel = productViewModel,
                 navController = rootNavController,
-                wishlistViewModel = wishlistViewModel
+                wishlistViewModel = wishlistViewModel,
+                orderViewModel = orderViewModel
             ) }
             composable("my_product_screen") { MyProductScreen(
                 productViewModel = productViewModel,
                 navController = rootNavController,
-                auctionViewModel = auctionViewModel
+                auctionViewModel = auctionViewModel,
+                orderViewModel = orderViewModel
             ) }
-            composable("orders_screen") { OrdersScreen() }
+            composable("orders_screen") { OrdersScreen(
+                orderViewModel = orderViewModel,
+                productViewModel = productViewModel,
+                navController = rootNavController
+            ) }
         }
     }
 }

@@ -39,6 +39,7 @@ import com.example.pawnbet_frontend.ui.theme.DarkGrey
 import com.example.pawnbet_frontend.ui.theme.LightGrey
 import com.example.pawnbet_frontend.ui.theme.Orange
 import com.example.pawnbet_frontend.viewmodel.AuctionViewModel
+import com.example.pawnbet_frontend.viewmodel.OrderViewModel
 import com.example.pawnbet_frontend.viewmodel.ProductViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -48,7 +49,8 @@ import java.time.format.DateTimeFormatter
 fun AuctionScreen(
     productViewModel: ProductViewModel,
     auctionViewModel: AuctionViewModel,
-    navController: NavController
+    navController: NavController,
+    orderViewModel: OrderViewModel
 ) {
     var liveSelected by remember { mutableStateOf(true) }
     var selectedFilter by remember { mutableStateOf<String?>(null) }
@@ -197,7 +199,8 @@ fun AuctionScreen(
                 ProductCard(
                     product = product,
                     navController = navController,
-                    productViewModel = productViewModel
+                    productViewModel = productViewModel,
+                    orderViewModel = orderViewModel
                 )
             }
         }
